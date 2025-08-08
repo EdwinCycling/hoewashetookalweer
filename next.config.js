@@ -5,6 +5,14 @@ const nextConfig = {
   },
   // Netlify specific settings
   trailingSlash: false,
+  // Ensure path resolution works correctly
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': require('path').resolve(__dirname, './'),
+    };
+    return config;
+  },
 }
 
 module.exports = nextConfig

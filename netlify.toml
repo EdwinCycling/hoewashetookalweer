@@ -7,8 +7,17 @@
   NPM_FLAGS = "--legacy-peer-deps"
   CI = "false"
 
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+# Next.js App Router redirects
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Handle Next.js static files
+[[redirects]]
+  from = "/_next/*"
+  to = "/_next/:splat"
+  status = 200
 
 # Handle static assets
 [[redirects]]
