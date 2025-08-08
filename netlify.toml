@@ -5,24 +5,19 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Next.js App Router requires specific redirects
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Handle Next.js API routes
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
-# Handle static files
+# Handle Next.js static files
 [[redirects]]
   from = "/_next/*"
   to = "/_next/:splat"
   status = 200
 
-# Handle other static assets
+# Handle static assets
 [[redirects]]
   from = "/favicon.ico"
   to = "/favicon.ico"
@@ -31,4 +26,14 @@
 [[redirects]]
   from = "/manifest.json"
   to = "/manifest.json"
+  status = 200
+
+[[redirects]]
+  from = "/og-image.png"
+  to = "/og-image.png"
+  status = 200
+
+[[redirects]]
+  from = "/twitter-image.png"
+  to = "/twitter-image.png"
   status = 200
