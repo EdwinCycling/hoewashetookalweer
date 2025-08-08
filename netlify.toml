@@ -6,17 +6,8 @@
   NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
 
-# Next.js App Router requires specific redirects
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-# Handle Next.js static files
-[[redirects]]
-  from = "/_next/*"
-  to = "/_next/:splat"
-  status = 200
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 # Handle static assets
 [[redirects]]

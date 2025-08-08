@@ -5,8 +5,6 @@ const nextConfig = {
   },
   // Netlify specific settings
   trailingSlash: false,
-  // Ensure static export works properly
-  output: 'standalone',
 }
 
 module.exports = nextConfig
