@@ -1443,6 +1443,34 @@ export const RAMPEN_DATA: RampData[] = [
     "doden": 0,
     "gewonden": 0,
     "type": "ramp_met_nederlanders"
+  },
+  {
+    "datum": "2015-05-03",
+    "beschrijving": "Treinongeval bij Dalfsen waarbij een intercity botst met een vrachtwagen op een spoorwegovergang.",
+    "doden": 1,
+    "gewonden": 0,
+    "type": "ramp_in_nederland"
+  },
+  {
+    "datum": "2017-01-15",
+    "beschrijving": "Busongeval bij Losser waarbij een touringcar met studenten van de weg raakt door gladheid.",
+    "doden": 2,
+    "gewonden": 0,
+    "type": "ramp_in_nederland"
+  },
+  {
+    "datum": "2018-01-10",
+    "beschrijving": "Brand in een seniorenflat in Arnhem, waarbij meerdere bewoners omkomen door rookinhalatie.",
+    "doden": 6,
+    "gewonden": 0,
+    "type": "ramp_in_nederland"
+  },
+  {
+    "datum": "2021-07-28",
+    "beschrijving": "Overstromingen in Limburg door extreme regenval, met enkele dodelijke slachtoffers.",
+    "doden": 4,
+    "gewonden": 0,
+    "type": "ramp_in_nederland"
   }
 
   // Voeg hier meer rampendata toe
