@@ -3,10 +3,14 @@
 
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
+import { RAMPEN_DATA, RampData as LocalRampData } from '@/data/rampen-data';
 
 export interface RampData {
   datum: string;
   beschrijving: string;
+  doden?: number;
+  gewonden?: number;
+  type?: string;
 }
 
 export interface FetchRampenResult {
@@ -16,13 +20,8 @@ export interface FetchRampenResult {
   debugInfo?: any;
 }
 
-// Helper function to clean text from HTML
-function cleanText(text: string): string {
-  return text.replace(/<[^>]+>/g, '').trim();
-}
-
 /**
- * Fetches disasters and accidents for a specific date from historisch-archief.nl.
+ * Fetches disasters and accidents for a specific date from local data.
  *
  * @param date The date to fetch disaster data for.
  * @returns An object containing arrays of disasters or an error message.
@@ -30,70 +29,37 @@ function cleanText(text: string): string {
 export async function fetchRampen(
   date: Date
 ): Promise<FetchRampenResult> {
-  const dayNameDutch = format(date, 'EEEE', { locale: nl }).toLowerCase();
   const day = date.getDate();
-  const monthNameDutch = format(date, 'MMMM', { locale: nl }).toLowerCase();
+  const month = date.getMonth() + 1; // getMonth() returns 0-11
   const year = date.getFullYear();
 
-  const url = `https://historisch-archief.nl/wat-gebeurde-er-op-${dayNameDutch}-${day}-${monthNameDutch}-${year}`;
-
-  const headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-    'Accept-Language': 'nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7',
+  const internalDebugInfo: any = { 
+    requestedDate: `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
+    year,
+    month,
+    day,
+    totalRampenInData: RAMPEN_DATA.length
   };
-  
-  const internalDebugInfo: any = { url, year };
 
   try {
-    const response = await fetch(url, { headers, cache: 'no-store' });
-    internalDebugInfo.status = response.status;
-    internalDebugInfo.statusText = response.statusText;
+    // Filter rampen op de exacte datum
+    const rampenOpDatum = RAMPEN_DATA.filter(ramp => {
+      const [rampYear, rampMonth, rampDay] = ramp.datum.split('-').map(Number);
+      return rampYear === year && rampMonth === month && rampDay === day;
+    });
 
-    const htmlContent = await response.text();
-    if (process.env.NODE_ENV !== 'production') {
-        internalDebugInfo.rawHtmlExcerpt = htmlContent.substring(0, 5000);
-    }
+    // Filter rampen in dezelfde maand van hetzelfde jaar
+    const rampenInMaand = RAMPEN_DATA.filter(ramp => {
+      const [rampYear, rampMonth] = ramp.datum.split('-').map(Number);
+      return rampYear === year && rampMonth === month;
+    });
 
-    if (!response.ok) {
-      let errorMsg = `Fout bij ophalen van ${url} (${response.status}).`;
-      return { rampenOpDatum: [], rampenInMaand: [], error: errorMsg, debugInfo: internalDebugInfo };
-    }
-
-    const rampenOpDatum: RampData[] = [];
-    const rampenInMaand: RampData[] = [];
-
-    // Function to extract events under a specific header
-    const extractEventsFromSection = (headerText: string): RampData[] => {
-      const results: RampData[] = [];
-      const sectionStartRegex = new RegExp(`<h4 class="mt-6 mb-4 font-main font-bold">${headerText}<\/h4>`);
-      const sectionMatch = htmlContent.match(sectionStartRegex);
-      
-      if (sectionMatch && typeof sectionMatch.index === 'number') {
-        let startIndex = sectionMatch.index + sectionMatch[0].length;
-        const searchArea = htmlContent.substring(startIndex);
-        const nextHeaderIndex = searchArea.search(/<h[34] class="/);
-        const sectionContent = nextHeaderIndex !== -1 ? searchArea.substring(0, nextHeaderIndex) : searchArea;
-
-        const eventRegex = /<div class="grow font-bold"[^>]*>([^<]+)<\/div>\s*<div[^>]*>([^<]+)<\/div>/g;
-        let match;
-        while ((match = eventRegex.exec(sectionContent)) !== null) {
-          const datum = cleanText(match[1]);
-          const beschrijving = cleanText(match[2]);
-          if (datum && beschrijving) {
-            results.push({ datum, beschrijving });
-          }
-        }
-      }
-      return results;
-    };
-
-    const rampenOpDatumData = extractEventsFromSection(`Rampen en Ongevallen op ${day} ${monthNameDutch}`);
-    const rampenInMaandData = extractEventsFromSection(`Rampen en Ongevallen in ${monthNameDutch}`);
+    internalDebugInfo.rampenOpDatumCount = rampenOpDatum.length;
+    internalDebugInfo.rampenInMaandCount = rampenInMaand.length;
 
     return {
-      rampenOpDatum: rampenOpDatumData,
-      rampenInMaand: rampenInMaandData,
+      rampenOpDatum: rampenOpDatum,
+      rampenInMaand: rampenInMaand,
       error: null,
       debugInfo: internalDebugInfo,
     };
