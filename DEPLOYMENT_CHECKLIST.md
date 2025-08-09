@@ -1,98 +1,173 @@
-# 🚀 Deployment Checklist - HoeWasHetOokAlweer
+# Deployment Checklist - HoeWasHetOokAlWeer.nl
 
-## 📋 Environment Variables voor Netlify
+## Netlify Deployment Stappen
 
-### Firebase Config (Client-side)
+### 1. Voorbereiding
+- [x] Alle configuratiebestanden zijn aanwezig
+- [x] Dependencies zijn correct geïnstalleerd
+- [x] TypeScript configuratie is geoptimaliseerd
+- [x] Next.js configuratie is aangepast voor Netlify
+
+### 2. Netlify Dashboard Instellingen
+
+#### Build Settings
+- **Build command**: `npm run build`
+- **Publish directory**: `.next`
+- **Node version**: 18
+
+#### Environment Variables
+Zorg ervoor dat alle volgende environment variables zijn ingesteld:
+
+**Firebase (Public)**
 ```
-NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
-### Firebase Admin (Server-side)
+**Firebase Admin (Secret)**
 ```
-FIREBASE_ADMIN_PROJECT_ID=your_project_id
-FIREBASE_ADMIN_PRIVATE_KEY=your_private_key
-FIREBASE_ADMIN_CLIENT_EMAIL=your_client_email
+MY_FIREBASE_ADMIN_SERVICE_ACCOUNT_KEY={"type":"service_account",...}
 ```
 
-### Stripe
+**Stripe (Public)**
+```
+NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR=price_xxxxx
+NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR=price_xxxxx
+NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG=price_xxxxx
+```
+
+**Stripe (Secret)**
 ```
 STRIPE_SECRET_KEY=sk_test_... (of sk_live_... voor productie)
 STRIPE_WEBHOOK_SECRET=whsec_...
 ```
 
-### reCAPTCHA
+**reCAPTCHA (Public)**
 ```
-NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_site_key
-RECAPTCHA_SECRET_KEY=your_secret_key
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_recaptcha_site_key
 ```
 
-## 🔧 Netlify Setup Stappen
+**Admin**
+```
+ADMIN_API_KEY=your_admin_api_key
+```
 
-### 1. Repository koppelen
-- Ga naar [netlify.com](https://netlify.com)
-- Klik "New site from Git"
-- Kies GitHub en selecteer je repository
-- Branch: `main`
+**App**
+```
+NEXT_PUBLIC_APP_URL=https://your-site.netlify.app
+NODE_ENV=production
+```
 
-### 2. Build Settings
-- **Build command:** `npm run build`
-- **Publish directory:** `.next`
-- **Node version:** 18 (of hoger)
+### 3. Netlify Plugin Verwijderen
+1. Ga naar Site settings > Build & deploy > Build plugins
+2. Verwijder eventuele Next.js plugins
+3. Gebruik alleen de standaard Netlify build process
 
-### 3. Environment Variables instellen
-- Ga naar Site settings → Environment variables
-- Voeg alle bovenstaande variabelen toe
-- **Belangrijk:** Gebruik je echte API keys, niet de dummy waarden!
+### 4. Build Cache Wissen
+1. Ga naar Site settings > Build & deploy > Build cache
+2. Klik op "Clear build cache"
+3. Trigger een nieuwe deployment
 
-### 4. Domain instellen
-- Netlify geeft je een random URL (bijv. `amazing-app-123.netlify.app`)
-- Je kunt een custom domain instellen in Domain settings
+### 5. Deployment Troubleshooting
 
-## ⚠️ Belangrijke Notities
+#### Als build faalt met path resolution errors:
+1. Controleer of alle `@/` imports correct zijn
+2. Zorg ervoor dat `tsconfig.json` paths correct zijn geconfigureerd
+3. Controleer of alle dependencies in `package.json` staan
 
-### Security
-- ✅ Je API keys zijn veilig in Netlify environment variables
-- ✅ Ze worden niet in je code opgeslagen
-- ✅ Alleen server-side code heeft toegang tot server-side keys
+#### Als build faalt met TypeScript errors:
+1. Controleer of `typescript` in dependencies staat (niet devDependencies)
+2. Zorg ervoor dat `@types/*` packages correct zijn geïnstalleerd
+3. Controleer of `strict: false` in `tsconfig.json` staat
 
-### Firebase Setup
-- Zorg dat je Firebase project de juiste domains heeft toegevoegd
-- Voor development: `localhost:3000`
-- Voor productie: je Netlify domain
+#### Als site werkt maar routing niet:
+1. Controleer of `_redirects` bestand correct is
+2. Zorg ervoor dat Netlify redirects correct zijn geconfigureerd
+3. Test client-side routing
 
-### Stripe Webhooks
-- Update je Stripe webhook URL naar: `https://your-domain.netlify.app/api/webhooks/stripe`
-- Test de webhook in Stripe dashboard
+### 6. Alternatieve Deployment (Vercel)
 
-### reCAPTCHA
-- Update je reCAPTCHA domains in Google reCAPTCHA console
-- Voeg je Netlify domain toe
+Als Netlify problemen blijft geven, is Vercel de aanbevolen optie:
 
-## 🧪 Test Checklist
+1. **Push code naar GitHub**
+2. **Import project in Vercel**
+3. **Configure environment variables**
+4. **Deploy**
 
-Na deployment, test:
-- [ ] Login functionaliteit
-- [ ] Premium features
-- [ ] Stripe checkout
-- [ ] reCAPTCHA op forms
-- [ ] Alle tabs laden correct
-- [ ] Firebase database connectie
+Vercel heeft betere native ondersteuning voor Next.js en minder configuratie nodig.
 
-## 🔄 Updates
+### 7. Post-Deployment Checklist
 
-Voor toekomstige updates:
-1. Push naar GitHub `main` branch
-2. Netlify bouwt automatisch opnieuw
-3. Environment variables blijven behouden
+- [ ] Homepage laadt correct
+- [ ] Alle tabs werken (Nederlandse films, Internationale films, etc.)
+- [ ] Firebase authentication werkt
+- [ ] Stripe checkout werkt
+- [ ] Admin functionaliteit werkt
+- [ ] Mobile responsive design werkt
+- [ ] Performance is acceptabel
 
-## 📞 Support
+### 8. Monitoring
 
-Als er problemen zijn:
-1. Check Netlify build logs
+Na deployment:
+- Monitor build logs voor errors
+- Test alle belangrijke functionaliteiten
+- Controleer Firebase logs voor errors
+- Monitor Stripe webhook deliveries
+
+## Huidige Configuratie
+
+### netlify.toml
+```toml
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_FLAGS = "--legacy-peer-deps"
+  CI = "false"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+```
+
+### next.config.js
+```javascript
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: {
+    domains: ['images.unsplash.com', 'via.placeholder.com'],
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': require('path').resolve(__dirname, './'),
+    };
+    return config;
+  },
+}
+
+module.exports = nextConfig
+```
+
+## Belangrijke Notities
+
+1. **Node.js versie**: Gebruik Node.js 18 voor betere compatibiliteit
+2. **Legacy peer deps**: Nodig voor sommige dependencies
+3. **CI=false**: Voorkomt waarschuwingen die build kunnen breken
+4. **Path resolution**: Webpack alias zorgt voor correcte `@/` imports
+5. **Redirects**: Zorgt voor correcte client-side routing
+
+## Contact
+
+Bij problemen:
+1. Check build logs in Netlify dashboard
 2. Controleer environment variables
 3. Test lokaal met `npm run build`
+4. Overweeg Vercel als alternatief

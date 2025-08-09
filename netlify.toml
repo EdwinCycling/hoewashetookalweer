@@ -1,9 +1,9 @@
 [build]
-  command = "npm install --legacy-peer-deps && npm run build"
+  command = "npm run build"
   publish = ".next"
 
 [build.environment]
-  NODE_VERSION = "16"
+  NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
   CI = "false"
 
@@ -11,10 +11,4 @@
 [[redirects]]
   from = "/*"
   to = "/index.html"
-  status = 200
-
-# Handle Next.js static files
-[[redirects]]
-  from = "/_next/*"
-  to = "/_next/:splat"
   status = 200
