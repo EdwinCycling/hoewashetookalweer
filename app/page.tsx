@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -139,6 +140,7 @@ type AllDataState = { [key: string]: { status: FetchStatus; data?: any; error?: 
 
 export default function Home() {
     const { toast } = useToast();
+    const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
     const [isPremium, setIsPremium] = useState<boolean | undefined>(undefined);
     const [currentDate, setCurrentDate] = useState<Date | null>(null);
@@ -187,6 +189,51 @@ export default function Home() {
         setTabClickCount(0);
         setIsLoading(false);
     }, []);
+
+    const handlePostcardClick = useCallback(() => {
+        if (!currentDate) {
+            toast({
+                title: "Geen datum geselecteerd",
+                description: "Selecteer eerst een datum om een postcard te maken.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        // Prepare simplified data for postcard page - only include basic data
+        const simplifiedData: any = {};
+        
+        // Only include successful data from allData
+        Object.keys(allData).forEach(key => {
+            if (allData[key]?.status === 'success' && allData[key]?.data) {
+                // Only include basic serializable data
+                const data = allData[key].data;
+                if (data && typeof data === 'object') {
+                    simplifiedData[key] = data;
+                }
+            }
+        });
+
+        try {
+            const dataString = JSON.stringify(simplifiedData);
+            const dateParam = currentDate.toISOString().split('T')[0];
+            
+            // Try URL first, fallback to localStorage if URL would be too long
+            if (dataString.length < 1000) {
+                const dataToPass = encodeURIComponent(dataString);
+                router.push(`/postcard-simple?date=${dateParam}&data=${dataToPass}`);
+            } else {
+                // Store in localStorage for large data
+                localStorage.setItem('postcardData', dataString);
+                router.push(`/postcard-simple?date=${dateParam}&useStorage=true`);
+            }
+        } catch (error) {
+            console.error('Error preparing postcard data:', error);
+            // Fallback: go without data
+            const dateParam = currentDate.toISOString().split('T')[0];
+            router.push(`/postcard-simple?date=${dateParam}`);
+        }
+    }, [currentDate, allData, router, toast]);
 
     const handleLogout = () => {
         const auth = getAuth(app!);
@@ -525,6 +572,18 @@ export default function Home() {
 
             {showTabs && (
             <div className="w-full max-w-4xl space-y-4 mt-2">
+                {/* Postcard Button */}
+                <div className="flex justify-center">
+                  <Button 
+                    onClick={handlePostcardClick} 
+                    variant="outline"
+                    className="bg-gradient-to-r from-blue-50 to-orange-50 dark:from-blue-950 dark:to-orange-950 border-primary/20 hover:border-primary/40"
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    📮 Stuur Postcard
+                  </Button>
+                </div>
+
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                     <TabsList className="grid grid-cols-responsive-tab-list gap-0 py-2 px-1 h-auto mb-4 bg-muted/50 w-full border border-border rounded-md">
                     {tabsOrder.map(tabValue => {

@@ -12,10 +12,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2, Eye, EyeOff, Home } from "lucide-react";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { app } from "@/lib/firebase";
+import { getUserPremiumStatus } from "@/actions/auth";
+import { useToast } from "@/hooks/use-toast";
 
 
 export default function LoginPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +38,39 @@ export default function LoginPage() {
     }
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      // Check premium status and show welcome message
+      try {
+        const premiumStatus = await getUserPremiumStatus(user.uid);
+        if (premiumStatus.isPremium && premiumStatus.daysRemaining !== null) {
+          if (premiumStatus.daysRemaining > 0) {
+            toast({
+              title: "🎉 Welkom terug!",
+              description: `Je hebt nog ${premiumStatus.daysRemaining} dagen premium toegang.`,
+            });
+          } else {
+            toast({
+              title: "⚠️ Premium verlopen",
+              description: "Je premium toegang is verlopen. Verleng je pakket voor toegang tot alle features.",
+              variant: "destructive"
+            });
+          }
+        } else {
+          toast({
+            title: "👋 Welkom terug!",
+            description: "Succesvol ingelogd.",
+          });
+        }
+      } catch (premiumError) {
+        // If premium check fails, just show normal welcome
+        toast({
+          title: "👋 Welkom terug!",
+          description: "Succesvol ingelogd.",
+        });
+      }
+      
       router.push('/'); // Redirect to home page on successful login
     } catch (err: any) {
       switch (err.code) {

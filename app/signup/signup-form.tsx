@@ -13,7 +13,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { app } from "@/lib/firebase";
-import { checkRegistrationEligibility, createUserInAuth } from "@/actions/auth";
+import { checkRegistrationEligibility, createUserInAuth, getUserPremiumStatus } from "@/actions/auth";
+import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,7 @@ const getPasswordStrength = (password: string) => {
 
 export function SignupForm({ initialEmail }: { initialEmail: string }) {
   const router = useRouter();
+  const { toast } = useToast();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -92,7 +94,30 @@ export function SignupForm({ initialEmail }: { initialEmail: string }) {
             setLoading(false);
             return;
         }
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Check premium status and show welcome message with expiry info
+        try {
+          const premiumStatus = await getUserPremiumStatus(user.uid);
+          if (premiumStatus.isPremium && premiumStatus.daysRemaining !== null) {
+            toast({
+              title: "🎉 Account succesvol aangemaakt!",
+              description: `Welkom! Je hebt ${premiumStatus.daysRemaining} dagen premium toegang.`,
+            });
+          } else {
+            toast({
+              title: "✅ Account aangemaakt!",
+              description: "Je account is succesvol aangemaakt en je bent ingelogd.",
+            });
+          }
+        } catch (premiumError) {
+          // If premium check fails, just show normal welcome
+          toast({
+            title: "✅ Account aangemaakt!",
+            description: "Je account is succesvol aangemaakt en je bent ingelogd.",
+          });
+        }
         
         router.push('/');
         

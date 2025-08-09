@@ -28,7 +28,7 @@ async function grantPremiumAccess(email: string, priceId: string) {
             expiryDate = new Date(now.setFullYear(now.getFullYear() + 2));
             break;
         case process.env.STRIPE_PRICE_ID_EEUWIG:
-            expiryDate = new Date(now.setFullYear(now.getFullYear() + 99)); // Represents 'lifetime'
+            expiryDate = new Date(now.setFullYear(now.getFullYear() + 10)); // Represents 'unlimited' - 10 years
             break;
         default:
             console.warn(`[Webhook] Unrecognized Price ID: ${priceId} for user ${email}. Defaulting to 1 year.`);
