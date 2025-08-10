@@ -27,7 +27,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           // Check if user has admin privileges by email
           const adminEmails = [
             'admin@example.com', // Test account
-            // Add your actual admin email addresses here
+            // Add your actual admin email addresses 
             edwin@editsolutions.nl,
           ];
           
