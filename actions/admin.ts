@@ -27,6 +27,7 @@ export interface UserStatusLists {
 export interface UsageAnalytics {
   tabClickCounts: Record<string, number>;
   monthlyUsage: Record<string, number>;
+  newspaperGenerationsThisMonth: number;
 }
 
 /**
@@ -147,6 +148,7 @@ export async function getUsageAnalytics(): Promise<UsageAnalytics> {
   return {
     newspaperGenerationsThisMonth,
     tabClickCounts,
+    monthlyUsage: {}, // Initialize empty for now
   };
 }
 
