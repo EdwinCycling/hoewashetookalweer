@@ -17,32 +17,63 @@ async function grantPremiumAccess(email: string, priceId: string) {
     const userRef = adminDb.collection('premium_users').doc(email);
     const now = new Date();
     let expiryDate: Date;
+    let yearsToAdd: number;
 
-    // Determine expiry date based on Price ID.
+    // Determine years to add based on Price ID.
     // These Price IDs MUST match the ones you create in your Stripe Dashboard.
     switch (priceId) {
         case process.env.STRIPE_PRICE_ID_JAAR:
-            expiryDate = new Date(now.setFullYear(now.getFullYear() + 1));
+            yearsToAdd = 1;
             break;
         case process.env.STRIPE_PRICE_ID_TWEEJAAR:
-            expiryDate = new Date(now.setFullYear(now.getFullYear() + 2));
+            yearsToAdd = 2;
             break;
         case process.env.STRIPE_PRICE_ID_EEUWIG:
-            expiryDate = new Date(now.setFullYear(now.getFullYear() + 10)); // Represents 'unlimited' - 10 years
+            yearsToAdd = 10; // Represents 'unlimited' - 10 years
             break;
         default:
             console.warn(`[Webhook] Unrecognized Price ID: ${priceId} for user ${email}. Defaulting to 1 year.`);
-            expiryDate = new Date(now.setFullYear(now.getFullYear() + 1));
+            yearsToAdd = 1;
     }
 
-    await userRef.set({
-        email: email,
-        expiryDate: Timestamp.fromDate(expiryDate),
-        updatedAt: Timestamp.now(),
-        lastPurchasePriceId: priceId,
-    }, { merge: true });
+    try {
+        // Check if user already exists and has premium access
+        const existingUser = await userRef.get();
+        
+        if (existingUser.exists) {
+            const userData = existingUser.data();
+            const existingExpiryDate = userData?.expiryDate?.toDate();
+            
+            if (existingExpiryDate && existingExpiryDate > now) {
+                // User has existing premium access in the future, add years to that date
+                expiryDate = new Date(existingExpiryDate);
+                expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+                console.log(`[Webhook] Extending existing premium access for ${email} from ${existingExpiryDate.toISOString()} to ${expiryDate.toISOString()}`);
+            } else {
+                // User has expired or no premium access, start from current date
+                expiryDate = new Date(now);
+                expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+                console.log(`[Webhook] Starting new premium access for ${email} from ${now.toISOString()} until ${expiryDate.toISOString()}`);
+            }
+        } else {
+            // New user, start from current date
+            expiryDate = new Date(now);
+            expiryDate.setFullYear(expiryDate.getFullYear() + yearsToAdd);
+            console.log(`[Webhook] Creating new premium access for ${email} from ${now.toISOString()} until ${expiryDate.toISOString()}`);
+        }
 
-    console.log(`[Webhook] Premium access granted to ${email} until ${expiryDate.toISOString()}`);
+        await userRef.set({
+            email: email,
+            expiryDate: Timestamp.fromDate(expiryDate),
+            updatedAt: Timestamp.now(),
+            lastPurchasePriceId: priceId,
+        }, { merge: true });
+
+        console.log(`[Webhook] Premium access granted to ${email} until ${expiryDate.toISOString()}`);
+    } catch (error) {
+        console.error(`[Webhook] Error processing premium access for ${email}:`, error);
+        throw error;
+    }
 }
 
 

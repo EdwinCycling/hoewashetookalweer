@@ -1,0 +1,9 @@
+{
+  "name": "netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify functions for HoeWasHetOokAlWeer",
+  "main": "index.js",
+  "dependencies": {
+    "date-fns": "^2.30.0"
+  }
+}

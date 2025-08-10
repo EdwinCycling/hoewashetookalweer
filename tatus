@@ -1,0 +1,3 @@
+[33m57c9787[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m  Complete Stripe payment integration & Postcard PDF functionality
+[33mcfdd6f3[m Final Netlify deployment setup - optimized configuration for Next.js App Router
+[33m83ab145[m Simplify Netlify config: Move TypeScript to dependencies, use Node 16, remove plugin

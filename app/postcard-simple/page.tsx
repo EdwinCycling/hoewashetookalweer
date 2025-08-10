@@ -98,7 +98,7 @@ function PostcardSimpleContent() {
   const loadPostcards = async () => {
     setLoadingPostcards(true);
     try {
-      const response = await fetch('/api/postcards');
+      const response = await fetch('/.netlify/functions/postcards');
       if (!response.ok) {
         throw new Error('Failed to load postcards');
       }
@@ -136,7 +136,7 @@ function PostcardSimpleContent() {
 
     setGeneratingContent(true);
     try {
-      const response = await fetch('/api/generate-postcard-summary', {
+      const response = await fetch('/.netlify/functions/generate-postcard-summary', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

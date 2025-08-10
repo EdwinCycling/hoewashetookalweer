@@ -15,7 +15,7 @@ export interface PremiumUserStatus {
 
 export interface ActivatedUserStatus extends PremiumUserStatus {
   uid: string;
-  lastSignInTime?: string;
+  lastSignInTime: string;
 }
 
 export interface UserStatusLists {
@@ -25,8 +25,41 @@ export interface UserStatusLists {
 }
 
 export interface UsageAnalytics {
-  newspaperGenerationsThisMonth: number;
   tabClickCounts: Record<string, number>;
+  monthlyUsage: Record<string, number>;
+}
+
+/**
+ * Check if a user has admin privileges
+ * @param uid The user's UID from Firebase Auth
+ * @returns boolean indicating if user is admin
+ */
+export async function checkAdminPrivileges(uid: string): Promise<boolean> {
+  if (!adminDb) {
+    console.error('[Admin Action] Firebase Admin SDK is not initialized.');
+    return false;
+  }
+
+  try {
+    const user = await getAuth().getUser(uid);
+    const email = user.email;
+
+    if (!email) {
+      return false;
+    }
+
+    // List of admin email addresses - you can modify this list
+    const adminEmails = [
+      'admin@example.com', // Test account
+      // Add your actual admin email addresses here
+      // 'your-email@domain.com',
+    ];
+
+    return adminEmails.includes(email.toLowerCase());
+  } catch (error) {
+    console.error(`[Admin Action] Error checking admin privileges for UID ${uid}:`, error);
+    return false;
+  }
 }
 
 export async function getUserStatusLists(): Promise<UserStatusLists> {

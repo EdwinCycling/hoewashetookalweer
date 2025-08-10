@@ -139,6 +139,19 @@ type FetchStatus = 'idle' | 'loading' | 'success' | 'error';
 type AllDataState = { [key: string]: { status: FetchStatus; data?: any; error?: any; }; };
 
 export default function Home() {
+  // SEO-friendly page title and description based on selected date
+  const getPageTitle = (date: Date | null) => {
+    if (!date) return 'HoeWasHetOokAlWeer.nl - Ontdek wat er gebeurde op elke dag in de geschiedenis';
+    const formattedDate = format(date, 'd MMMM yyyy', { locale: nl });
+    return `Wat gebeurde er op ${formattedDate}? - Historische feiten en weetjes | HoeWasHetOokAlWeer.nl`;
+  };
+
+  const getPageDescription = (date: Date | null) => {
+    if (!date) return 'Duik in de geschiedenis en ontdek wat er gebeurde op elke dag van het jaar. Historische feiten, weer, muziek, films, sport en meer op HoeWasHetOokAlWeer.nl';
+    const formattedDate = format(date, 'd MMMM yyyy', { locale: nl });
+    const year = date.getFullYear();
+    return `Ontdek wat er gebeurde op ${formattedDate}. Historische gebeurtenissen, weer van toen, muziek van ${year}, films van ${year}, sport en meer interessante feiten uit de geschiedenis.`;
+  };
     const { toast } = useToast();
     const router = useRouter();
     const [user, setUser] = useState<User | null>(null);

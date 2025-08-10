@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && npm run build:functions",
+    "build:functions": "cd netlify/functions && npm install",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit"
