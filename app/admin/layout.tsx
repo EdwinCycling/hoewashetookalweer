@@ -28,7 +28,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           const adminEmails = [
             'admin@example.com', // Test account
             // Add your actual admin email addresses 
-            edwin@editsolutions.nl,
+            'edwin@editsolutions.nl',
           ];
           
           const isUserAdmin = adminEmails.includes(user.email?.toLowerCase() || '');
