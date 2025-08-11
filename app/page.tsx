@@ -81,7 +81,7 @@ import {
     Newspaper, Trophy, Euro, UsersRound, Music as MusicIcon, Baby, Gift, Tv2, Gamepad2, Smartphone, Landmark, Flame, Mic, Flag, Car, Activity,
     Music2 as SongFestivalIcon, Radio as TelevizierRingIcon, Award as OlympicIcon, CloudSunRain, Goal, DollarSign, Medal, Snowflake, MountainSnow as VolcanoIcon,
     ClipboardCopy, MessageSquare, XIcon, Instagram, Cookie, Gem, ShoppingCart as BolIcon, Headphones, Globe, CloudOff, Sunrise, Rocket, LineChart as DashboardIcon, MonitorSmartphone, CalendarCheck, TrendingUp, TrendingDown,
-    Youtube, KeyRound, DatabaseZap, LogOut, UserCog, Printer, Maximize, ThermometerSun, ThermometerSnowflake, ShoppingCart, FlagTriangleRight, Hash, Sigma, Settings, UserPlus, Check, Zap, Crown, ListChecks
+    Youtube, KeyRound, DatabaseZap, LogOut, UserCog, Printer, Maximize, ThermometerSun, ThermometerSnowflake, ShoppingCart, FlagTriangleRight, Hash, Sigma, Settings, UserPlus, Check, Zap, Crown, ListChecks, ShieldOff
 } from 'lucide-react';
 
 interface RampData extends ActionRampData {}
