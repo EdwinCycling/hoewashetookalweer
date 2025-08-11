@@ -700,7 +700,7 @@ export default function Home() {
             };
 
             if (!hasContent(data) && !['elfstedentocht', 'olympische_medailles', 'wk_ek_voetbal'].includes(tabId)) {
-                 return <NoDataDisplay />;
+                return <NoDataDisplay />;
             }
             
             return <>{children(data)}</>;
