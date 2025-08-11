@@ -730,7 +730,7 @@ export default function Home() {
                                 </span>
                                 <span className="text-xs text-orange-600 dark:text-orange-400">
                                   {user.daysRemaining !== null && user.daysRemaining < 0 ? 
-                                    `Verlopen op ${new Date(Date.now() + Math.abs(user.daysRemaining) * 24 * 60 * 60 * 1000)).toLocaleDateString('nl-NL')}` : 
+                                    `Verlopen op ${new Date(Date.now() + Math.abs(user.daysRemaining) * 24 * 60 * 60 * 1000).toLocaleDateString('nl-NL')}` : 
                                     'Verlopen'
                                   }
                                 </span>
