@@ -54,7 +54,7 @@ export async function checkAdminPrivileges(uid: string): Promise<boolean> {
     const adminEmails = [
       'admin@example.com', // Test account
       // Add your actual admin email addresses here
-      // 'your-email@domain.com',
+      'edwin@editsolutions.nl',
     ];
 
     return adminEmails.includes(email.toLowerCase());
