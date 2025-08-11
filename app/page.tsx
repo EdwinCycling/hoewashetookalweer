@@ -18,7 +18,12 @@ import { nl } from 'date-fns/locale';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { getAuth, onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth';
+
+// Extended user interface to include premium status
+interface User extends FirebaseUser {
+    daysRemaining?: number | null;
+}
 import { app } from '@/lib/firebase';
 import { getUserPremiumStatus } from '@/actions/auth';
 import { trackTabClick } from '@/actions/admin';
@@ -71,12 +76,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 
 import {
-    AlertCircle, CalendarDays, CalendarIcon, Loader2, Info, Users, Skull, Film as FilmIconLucide, BookOpen, Star, Home as HomeIcon, Fuel, Disc3, Mail,
+    AlertCircle, BarChart3, CalendarDays, CalendarIcon, Loader2, Info, Users, Skull, Film as FilmIconLucide, BookOpen, Star, Home as HomeIcon, Fuel, Disc3, Mail,
     Thermometer, Wind as WindIcon, Sun as SunIcon, Droplets as DropletsIcon, Gauge as GaugeIcon, CloudFog, Umbrella as UmbrellaIcon, ExternalLink,
     Newspaper, Trophy, Euro, UsersRound, Music as MusicIcon, Baby, Gift, Tv2, Gamepad2, Smartphone, Landmark, Flame, Mic, Flag, Car, Activity,
     Music2 as SongFestivalIcon, Radio as TelevizierRingIcon, Award as OlympicIcon, CloudSunRain, Goal, DollarSign, Medal, Snowflake, MountainSnow as VolcanoIcon,
     ClipboardCopy, MessageSquare, XIcon, Instagram, Cookie, Gem, ShoppingCart as BolIcon, Headphones, Globe, CloudOff, Sunrise, Rocket, LineChart as DashboardIcon, MonitorSmartphone, CalendarCheck, TrendingUp, TrendingDown,
-    Youtube, KeyRound, DatabaseZap, LogOut, UserCog, Printer, Maximize, ThermometerSun, ThermometerSnowflake, ShoppingCart, FlagTriangleRight, Hash, Sigma, Settings, UserPlus
+    Youtube, KeyRound, DatabaseZap, LogOut, UserCog, Printer, Maximize, ThermometerSun, ThermometerSnowflake, ShoppingCart, FlagTriangleRight, Hash, Sigma, Settings, UserPlus, Check, Zap, Crown, ListChecks
 } from 'lucide-react';
 
 interface RampData extends ActionRampData {}
@@ -133,7 +138,172 @@ const Formule1Icon = ({ className }: { className?: string }) => (<svg xmlns="htt
 const tabsOrder: string[] = ["knmi_daily_dataset", "weer_records", "maand_overzicht_knmi", "weer_reeksen", "weer_uitersten", "feestdagen", "prijzen", "bevolking", "huis", "benzine", "muziek", "grandmix", "nederlandstalige_top10", "namen", "films", "tv_series", "games", "boeken", "gadgets", "elfstedentocht", "politiek", "song_festival", "sporter_van_het_jaar", "oscars", "televizier_ring", "olympische_medailles", "wk_ek_voetbal", "champions_league", "sport_algemeen", "voetbal", "forbes_rijkste", "rampen", "formule_1", "autos", "presidenten"];
 
 const AdPlaceholderModal = ({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) => { if (!open) return null; return (<Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Advertentie Placeholder</DialogTitle><DialogDescription>Dit is een placeholder voor een advertentie. Hier zou de daadwerkelijke advertentie-inhoud komen.</DialogDescription></DialogHeader><DialogFooter><DialogClose asChild><Button onClick={() => onOpenChange(false)}>Sluiten</Button></DialogClose></DialogFooter></DialogContent></Dialog>);};
-const PremiumContentPlaceholder = ({ tabId }: { tabId: string }) => { const teaserText = premiumTabTeasers[tabId] || "Ontdek nog meer unieke historische inzichten en geniet van een reclamevrije ervaring."; return (<Card className="shadow-none bg-card border-primary/30"><CardHeader className="items-center text-center"><Gem className="h-10 w-10 text-primary mb-3" /><CardTitle className="text-card-foreground text-xl">Exclusieve Premium Content</CardTitle><CardDescription className="text-muted-foreground px-4">{teaserText}</CardDescription></CardHeader><CardContent className="text-center"><p className="mb-5 text-sm text-card-foreground">Upgrade naar premium en krijg direct toegang tot deze en vele andere unieke features, een volledig advertentievrije ervaring, en historische data die tot wel 100 jaar teruggaat!</p><Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground"><Link href="/premium"><Rocket className="mr-2 h-4 w-4" /> Ontdek Premium Voordelen</Link></Button></CardContent></Card>);};
+
+const PremiumPopup = ({ open, onOpenChange, onContinue }: { open: boolean, onOpenChange: (open: boolean) => void, onContinue: () => void }) => {
+    if (!open) return null;
+    
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0">
+                {/* Hero Section with Background */}
+                <div className="relative bg-gradient-to-br from-primary/5 via-purple-50 to-blue-50 dark:from-primary/10 dark:via-purple-900/20 dark:to-blue-900/20 p-8 rounded-t-lg">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-purple-500/5 dark:from-primary/10 dark:to-purple-500/10 rounded-t-lg"></div>
+                    <div className="relative z-10 text-center">
+                        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 shadow-lg">
+                            <Gem className="h-10 w-10 text-primary" />
+                        </div>
+                        <DialogTitle className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary via-purple-600 to-blue-600 bg-clip-text text-transparent mb-4">
+                            🎉 Welkom bij HoeWasHetOokAlWeer.nl!
+                        </DialogTitle>
+                        <DialogDescription className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                            Je hebt net je eerste datum geselecteerd! Ontdek hoe je nog meer fascinerende historische feiten kunt ontdekken met Premium.
+                        </DialogDescription>
+                    </div>
+                </div>
+
+                <div className="p-8 space-y-8">
+                    {/* Main Benefits Section */}
+                    <div className="text-center mb-8">
+                        <h2 className="text-2xl font-bold text-foreground mb-4">
+                            Wat krijg je met Premium?
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Benefit 1: More Data */}
+                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-xl border-2 border-green-200 dark:border-green-800">
+                                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <DatabaseZap className="h-8 w-8 text-green-600 dark:text-green-400" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-2">
+                                    Meer Historische Data
+                                </h3>
+                                <p className="text-sm text-green-700 dark:text-green-300">
+                                    <strong>100 jaar terug</strong> in plaats van 30 jaar. Ontdek wat er gebeurde in 1925, 1930, 1940 en meer!
+                                </p>
+                            </div>
+
+                            {/* Benefit 2: No Ads */}
+                            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-6 rounded-xl border-2 border-blue-200 dark:border-blue-800">
+                                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <ShieldOff className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                                    100% Reclamevrij
+                                </h3>
+                                <p className="text-sm text-blue-700 dark:text-blue-300">
+                                    <strong>Geen onderbrekingen</strong> door banners of pop-ups. Geniet van een ongestoorde ervaring.
+                                </p>
+                            </div>
+
+                            {/* Benefit 3: One-time Payment */}
+                            <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-xl border-2 border-purple-200 dark:border-purple-800">
+                                <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Calendar className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-purple-800 dark:text-purple-200 mb-2">
+                                    Eenmalige Betaling
+                                </h3>
+                                <p className="text-sm text-purple-700 dark:text-purple-300">
+                                    <strong>Geen abonnement</strong> of maandelijkse kosten. Betaal één keer en geniet voor altijd!
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Premium Tabs Preview */}
+                    <div className="bg-gradient-to-r from-primary/5 to-purple-100 dark:from-primary/10 dark:to-purple-900/20 p-6 rounded-xl border border-primary/20">
+                        <h3 className="text-xl font-bold text-center text-foreground mb-4">
+                            🚀 Exclusieve Premium Tabs
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                            <div className="flex items-center gap-2">
+                                <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                <span>KNMI Weerreeksen</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                <span>Huizenprijzen</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                <span>Top 100 Muziek</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                <span>Songfestival</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                <span>Champions League</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                <span>Formule 1</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                <span>Presidenten</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                <span>En nog veel meer!</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Pricing Highlight */}
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-xl border-2 border-green-300 dark:border-green-700">
+                        <div className="text-center">
+                            <h3 className="text-2xl font-bold text-green-800 dark:text-green-200 mb-3">
+                                💰 Betaalbare Premium Ervaring
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div className="bg-white dark:bg-green-900/50 p-3 rounded-lg">
+                                    <div className="text-2xl font-bold text-green-600">€3</div>
+                                    <div className="text-sm text-green-700 dark:text-green-300">1 Jaar</div>
+                                </div>
+                                <div className="bg-white dark:bg-green-900/50 p-3 rounded-lg">
+                                    <div className="text-2xl font-bold text-green-600">€5</div>
+                                    <div className="text-sm text-green-700 dark:text-green-300">2 Jaar</div>
+                                </div>
+                                <div className="bg-white dark:bg-green-900/50 p-3 rounded-lg">
+                                    <div className="text-2xl font-bold text-green-600">€10</div>
+                                    <div className="text-sm text-green-700 dark:text-green-300">10 Jaar</div>
+                                </div>
+                            </div>
+                            <p className="text-green-700 dark:text-green-300 font-medium">
+                                <strong>Allemaal eenmalige betalingen</strong> - geen verborgen kosten of abonnementen!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="p-8 bg-muted/30 border-t">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <Button 
+                            variant="outline" 
+                            onClick={onContinue}
+                            className="flex-1 h-12 text-lg font-semibold border-2 hover:bg-muted"
+                        >
+                            <span className="mr-2">➡️</span>
+                            Doorgaan zonder Premium
+                        </Button>
+                        <Button 
+                            asChild 
+                            className="flex-1 h-12 text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                        >
+                            <Link href="/premium" className="flex items-center justify-center">
+                                <Gem className="mr-2 h-5 w-5" />
+                                Breng me naar Premium
+                            </Link>
+                        </Button>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+};
+const PremiumContentPlaceholder = ({ tabId }: { tabId: string }) => { const teaserText = premiumTabTeasers[tabId] || "Ontdek nog meer unieke historische inzichten en geniet van een reclamevrije ervaring."; return (<Card className="shadow-lg bg-card border-2 border-primary/40"><CardHeader className="items-center text-center"><Gem className="h-10 w-10 text-primary mb-3" /><CardTitle className="text-card-foreground text-xl">Exclusieve Premium Content</CardTitle><CardDescription className="text-muted-foreground px-4">{teaserText}</CardDescription></CardHeader><CardContent className="text-center"><p className="mb-5 text-sm text-card-foreground">Upgrade naar premium en krijg direct toegang tot deze en vele andere unieke features, een volledig advertentievrije ervaring, en historische data die tot wel 100 jaar teruggaat!</p><Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground"><Link href="/premium"><Rocket className="mr-2 h-4 w-4" /> Ontdek Premium Voordelen</Link></Button></CardContent></Card>); };
 const KnmiDataDisplay = ({ data }: { data: FormattedKnmiDailyData }) => { const weatherSectionOrder: Array<keyof Omit<FormattedKnmiDailyData, 'locatieEnDatum' | 'error' | 'debugInfo'>> = ['temperatuur', 'zonBewolkingEnZicht', 'wind', 'neerslag', 'luchtdruk', 'luchtvochtigheid']; const sectionTitlesAndIcons: { [key: string]: { title: string; icon: React.ElementType } } = { temperatuur: { title: "Temperatuur", icon: Thermometer }, zonBewolkingEnZicht: { title: "Zon & Bewolking", icon: SunIcon }, wind: { title: "Wind", icon: WindIcon }, neerslag: { title: "Neerslag", icon: UmbrellaIcon }, luchtdruk: { title: "Luchtdruk", icon: GaugeIcon }, luchtvochtigheid: { title: "Relatieve Vochtigheid", icon: DropletsIcon } }; return (<ScrollArea className="h-[400px] pr-4"><div className="space-y-4">{weatherSectionOrder.map(sectionKey => { const sectionData = data[sectionKey]; const sectionInfo = sectionTitlesAndIcons[sectionKey]; if (!sectionData || !Object.values(sectionData).some(v => v !== undefined && v !== null)) return null; return (<div key={sectionKey}><h4 className="font-semibold text-md flex items-center mb-1 mt-2"><sectionInfo.icon className="h-5 w-5 mr-2 text-primary" />{sectionInfo.title}</h4><div className="pl-7 space-y-0.5 text-sm">{Object.entries(sectionData).map(([key, value]) => { if(value === undefined || value === null) return null; const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase()).replace(/\[/g, '(').replace(/\]/g, ')'); return <p key={key}><span className="text-muted-foreground min-w-[200px] inline-block">{label}:</span> {String(value)}</p> })}</div></div>); })}</div></ScrollArea>); };
 type FetchStatus = 'idle' | 'loading' | 'success' | 'error';
 type AllDataState = { [key: string]: { status: FetchStatus; data?: any; error?: any; }; };
@@ -167,6 +337,7 @@ export default function Home() {
     
     const [adModalOpen, setAdModalOpen] = useState(false);
     const [tabClickCount, setTabClickCount] = useState(0);
+    const [premiumPopupOpen, setPremiumPopupOpen] = useState(false);
 
     const [isLoading, setIsLoading] = useState(false);
     
@@ -305,10 +476,18 @@ export default function Home() {
                             });
                         }
                     }
+                    // Store days remaining in user state
+                    if (statusResult.daysRemaining !== null) {
+                        const userWithDays = { ...currentUser, daysRemaining: statusResult.daysRemaining };
+                        setUser(userWithDays);
+                    } else {
+                        setUser(currentUser);
+                    }
                 } catch (error) {
                     console.error("Error checking premium status via server action:", error);
                     setIsPremium(false);
                     localStorage.removeItem(LOCALSTORAGE_PREMIUM_KEY);
+                    setUser(currentUser);
                 }
             } else {
                 lastUid = null;
@@ -361,10 +540,25 @@ export default function Home() {
             });
             return;
         }
+        
+        // Show premium popup for non-premium users on first date selection
+        if (!isPremium && !localStorage.getItem('premium_popup_shown')) {
+            setPremiumPopupOpen(true);
+            localStorage.setItem('premium_popup_shown', 'true');
+            return;
+        }
+        
         setAllData({});
         setShowTabs(true);
         setActiveTab("knmi_daily_dataset");
     }, [currentDate, isPremium, toast]);
+
+    const handlePremiumPopupContinue = useCallback(() => {
+        setPremiumPopupOpen(false);
+        setAllData({});
+        setShowTabs(true);
+        setActiveTab("knmi_daily_dataset");
+    }, []);
 
     const handleDayChange = (value: number[]) => { if (currentDate) { const newDate = new Date(Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), value[0])); setCurrentDate(newDate); } };
     const handleMonthChange = (value: number[]) => { if (currentDate) { const newMonthIndex = value[0] - 1; const currentDay = currentDate.getUTCDate(); const daysInNewMonth = getDaysInMonth(new Date(Date.UTC(currentDate.getUTCFullYear(), newMonthIndex, 1))); const newDay = Math.min(currentDay, daysInNewMonth); const newDate = new Date(Date.UTC(currentDate.getUTCFullYear(), newMonthIndex, newDay)); setCurrentDate(newDate); } };
@@ -528,6 +722,33 @@ export default function Home() {
                         <div className="flex items-center gap-2">
                             <span className="text-sm text-muted-foreground hidden sm:inline">{user.email}</span>
                             {isPremium && <Gem className="h-4 w-4 text-primary" />}
+                            {/* Premium expired notification */}
+                            {user && !isPremium && (
+                              <div className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 border border-orange-200 dark:border-orange-800 rounded-full">
+                                <span className="text-xs text-orange-700 dark:text-orange-300 font-medium">
+                                  Premium verlopen
+                                </span>
+                                <span className="text-xs text-orange-600 dark:text-orange-400">
+                                  {user.daysRemaining !== null && user.daysRemaining < 0 ? 
+                                    `Verlopen op ${new Date(Date.now() + Math.abs(user.daysRemaining) * 24 * 60 * 60 * 1000)).toLocaleDateString('nl-NL')}` : 
+                                    'Verlopen'
+                                  }
+                                </span>
+                                <Button variant="ghost" size="sm" asChild className="h-6 px-2 text-xs bg-orange-100 hover:bg-orange-200 dark:bg-orange-900/50 dark:hover:bg-orange-900/70 text-orange-700 dark:text-orange-300 border-0">
+                                  <Link href="/premium">
+                                    Verlengen
+                                  </Link>
+                                </Button>
+                              </div>
+                            )}
+                            {/* Admin link for admin users */}
+                            {user.email && ['admin@example.com', 'edwin@editsolutions.nl'].includes(user.email.toLowerCase()) && (
+                              <Button variant="ghost" size="sm" asChild>
+                                <Link href="/admin/user-status" className="text-primary hover:text-primary/80">
+                                  Admin
+                                </Link>
+                              </Button>
+                            )}
                             <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Uitloggen">
                                 <LogOut className="h-5 w-5" />
                             </Button>
@@ -585,8 +806,8 @@ export default function Home() {
 
             {showTabs && (
             <div className="w-full max-w-4xl space-y-4 mt-2">
-                {/* Postcard Button */}
-                <div className="flex justify-center">
+                {/* Postcard and Analytics Buttons */}
+                <div className="flex justify-center gap-4">
                   <Button 
                     onClick={handlePostcardClick} 
                     variant="outline"
@@ -595,10 +816,24 @@ export default function Home() {
                     <Mail className="h-4 w-4 mr-2" />
                     📮 Stuur Postcard
                   </Button>
+                  
+                  {/* Analytics Button for Admin Users */}
+                  {user && user.email && ['admin@example.com', 'edwin@editsolutions.nl'].includes(user.email.toLowerCase()) && (
+                    <Button 
+                      variant="outline"
+                      asChild
+                      className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950 border-purple-200 dark:border-purple-800 hover:border-purple-400 dark:hover:border-purple-600"
+                    >
+                      <Link href="/admin/user-status">
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        📊 Analytics
+                      </Link>
+                    </Button>
+                  )}
                 </div>
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                    <TabsList className="grid grid-cols-responsive-tab-list gap-0 py-2 px-1 h-auto mb-4 bg-muted/50 w-full border border-border rounded-md">
+                    <TabsList className="grid grid-cols-responsive-tab-list gap-0 py-2 px-1 h-auto mb-4 bg-card border-2 border-border shadow-sm w-full rounded-md">
                     {tabsOrder.map(tabValue => {
                         let IconComponent: React.ElementType | null = null;
                         const isTabPremiumOnly = premiumOnlyTabs.includes(tabValue);
@@ -644,7 +879,7 @@ export default function Home() {
                         if (!IconComponent) return null;
                         
                         return (
-                          <TabsTrigger key={tabValue} value={tabValue} className="p-0.5 relative hover:bg-accent/50 border-0 rounded-sm shadow-none data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                          <TabsTrigger key={tabValue} value={tabValue} className="p-2 relative hover:bg-accent/80 border-0 rounded-md shadow-none data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all duration-200">
                             <div className="relative">
                               <IconComponent className="h-5 w-5"/>
                               {isTabPremiumOnly && !isPremium && <Gem className="h-3 w-3 absolute -top-1 -right-1 text-primary opacity-90" />}
@@ -655,9 +890,9 @@ export default function Home() {
                     </TabsList>
                 {tabsOrder.map(tabId => {
                     return (
-                    <TabsContent key={tabId} value={tabId}>
+                    <TabsContent key={tabId} value={tabId} className="mt-4">
                       {(isPremium === undefined && premiumOnlyTabs.includes(tabId)) ? (
-                          <Card className="shadow-none bg-card"><CardHeader className="items-center text-center"><CardTitle className="text-card-foreground text-xl flex items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Status controleren...</CardTitle></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
+                          <Card className="shadow-lg bg-card border-2 border-border"><CardHeader className="items-center text-center"><CardTitle className="text-card-foreground text-xl flex items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Status controleren...</CardTitle></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
                       ) : (isPremium === false && premiumOnlyTabs.includes(tabId)) ? (
                           <PremiumContentPlaceholder tabId={tabId} />
                       ) : (
@@ -924,7 +1159,12 @@ export default function Home() {
                 <span className="text-muted-foreground/80">v0.72</span>
             </footer>
         </div>
-        {!isPremium && <AdPlaceholderModal open={adModalOpen} onOpenChange={setAdModalOpen} /> }
+                                {!isPremium && <AdPlaceholderModal open={adModalOpen} onOpenChange={setAdModalOpen} /> }
+                        <PremiumPopup 
+                            open={premiumPopupOpen} 
+                            onOpenChange={setPremiumPopupOpen} 
+                            onContinue={handlePremiumPopupContinue} 
+                        />
       </div>
   );
 }

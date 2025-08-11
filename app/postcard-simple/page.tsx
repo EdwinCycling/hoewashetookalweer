@@ -103,13 +103,23 @@ function PostcardSimpleContent() {
         throw new Error('Failed to load postcards');
       }
       const data = await response.json();
-      setAvailablePostcards(data.postcards);
-      if (data.postcards.length > 0) {
-        setSelectedPostcard(data.postcards[0]);
+      
+      // Ensure postcards is an array and handle undefined/null cases
+      const postcards = data?.postcards || [];
+      setAvailablePostcards(postcards);
+      
+      if (postcards.length > 0) {
+        setSelectedPostcard(postcards[0]);
+        setCurrentPostcardIndex(0);
+      } else {
+        setSelectedPostcard(null);
         setCurrentPostcardIndex(0);
       }
     } catch (error) {
       console.error('Error loading postcards:', error);
+      setAvailablePostcards([]);
+      setSelectedPostcard(null);
+      setCurrentPostcardIndex(0);
       toast({
         title: "Afbeeldingen laden mislukt",
         description: "Er zijn geen postcard afbeeldingen beschikbaar.",
@@ -172,7 +182,7 @@ function PostcardSimpleContent() {
   };
 
   const navigatePostcard = (direction: 'prev' | 'next') => {
-    if (availablePostcards.length === 0) return;
+    if (!availablePostcards || availablePostcards.length === 0) return;
     
     let newIndex = currentPostcardIndex;
     if (direction === 'prev') {
@@ -186,7 +196,7 @@ function PostcardSimpleContent() {
   };
 
   const generatePdfContent = () => {
-    if (!postcardData || !selectedPostcard) return null;
+    if (!postcardData || !selectedPostcard || !availablePostcards || availablePostcards.length === 0) return null;
 
     const dateFormatted = formatDate(postcardData.date);
     const postcardImageUrl = `${window.location.origin}${selectedPostcard.url}`;
@@ -247,7 +257,7 @@ function PostcardSimpleContent() {
   };
 
   const handlePdfAction = async (action: 'print' | 'download' | 'preview') => {
-    if (!postcardData || !selectedPostcard || !generatedContent) {
+    if (!postcardData || !selectedPostcard || !generatedContent || !availablePostcards || availablePostcards.length === 0) {
       toast({
         title: "Niet gereed",
         description: "Selecteer een postcard en wacht tot de content is geladen.",
@@ -431,7 +441,7 @@ function PostcardSimpleContent() {
                       variant="outline"
                       size="icon"
                       onClick={() => navigatePostcard('prev')}
-                      disabled={availablePostcards.length <= 1}
+                      disabled={!availablePostcards || availablePostcards.length <= 1}
                       className="h-12 w-12 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-primary/20 hover:border-primary/40 shadow-lg"
                     >
                       <ChevronLeft className="h-5 w-5" />
@@ -439,7 +449,7 @@ function PostcardSimpleContent() {
                     
                     <div className="flex-1 max-w-md">
                       <div className="relative aspect-[3/4] bg-white dark:bg-gray-900 rounded-xl overflow-hidden border-4 border-white dark:border-gray-800 shadow-2xl">
-                        {availablePostcards[currentPostcardIndex] && (
+                        {availablePostcards && availablePostcards[currentPostcardIndex] && (
                           <Image
                             src={availablePostcards[currentPostcardIndex].url}
                             alt={availablePostcards[currentPostcardIndex].name}
@@ -448,17 +458,17 @@ function PostcardSimpleContent() {
                             sizes="(max-width: 768px) 100vw, 400px"
                           />
                         )}
-                        {selectedPostcard?.url === availablePostcards[currentPostcardIndex]?.url && (
+                        {selectedPostcard?.url === availablePostcards?.[currentPostcardIndex]?.url && (
                           <div className="absolute top-3 right-3 bg-green-500 text-white p-2 rounded-full shadow-lg animate-pulse">
                             <Check className="h-5 w-5" />
                           </div>
                         )}
                       </div>
                       <div className="text-center mt-4 space-y-1">
-                        <p className="font-semibold text-lg">Postcard {currentPostcardIndex + 1}</p>
+                        <p className="font-semibold text-lg">Postcard {availablePostcards ? currentPostcardIndex + 1 : 0}</p>
                         <div className="flex items-center justify-center space-x-2">
                           <div className="flex space-x-1">
-                            {Array.from({ length: availablePostcards.length }, (_, i) => (
+                            {availablePostcards && Array.from({ length: availablePostcards.length }, (_, i) => (
                               <div
                                 key={i}
                                 className={`h-2 w-2 rounded-full transition-all duration-200 ${
@@ -470,7 +480,7 @@ function PostcardSimpleContent() {
                             ))}
                           </div>
                           <span className="text-sm text-muted-foreground ml-2">
-                            {currentPostcardIndex + 1} van {availablePostcards.length}
+                            {availablePostcards ? currentPostcardIndex + 1 : 0} van {availablePostcards ? availablePostcards.length : 0}
                           </span>
                         </div>
                       </div>
@@ -480,7 +490,7 @@ function PostcardSimpleContent() {
                       variant="outline"
                       size="icon"
                       onClick={() => navigatePostcard('next')}
-                      disabled={availablePostcards.length <= 1}
+                      disabled={!availablePostcards || availablePostcards.length <= 1}
                       className="h-12 w-12 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-primary/20 hover:border-primary/40 shadow-lg"
                     >
                       <ChevronRight className="h-5 w-5" />
@@ -553,7 +563,7 @@ function PostcardSimpleContent() {
               onClick={() => handlePdfAction('preview')}
               variant="outline"
               className="h-16 border-blue-200 hover:border-blue-400 hover:bg-blue-50 flex-col"
-              disabled={generatingPdf || !selectedPostcard || !generatedContent}
+              disabled={generatingPdf || !selectedPostcard || !generatedContent || !availablePostcards || availablePostcards.length === 0}
             >
               {generatingPdf && pdfAction === 'preview' ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -569,7 +579,7 @@ function PostcardSimpleContent() {
               onClick={() => handlePdfAction('download')}
               variant="outline"
               className="h-16 border-green-200 hover:border-green-400 hover:bg-green-50 flex-col"
-              disabled={generatingPdf || !selectedPostcard || !generatedContent}
+              disabled={generatingPdf || !selectedPostcard || !generatedContent || !availablePostcards || availablePostcards.length === 0}
             >
               {generatingPdf && pdfAction === 'download' ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -585,7 +595,7 @@ function PostcardSimpleContent() {
               onClick={() => handlePdfAction('print')}
               variant="outline"
               className="h-16 border-purple-200 hover:border-purple-400 hover:bg-purple-50 flex-col"
-              disabled={generatingPdf || !selectedPostcard || !generatedContent}
+              disabled={generatingPdf || !selectedPostcard || !generatedContent || !availablePostcards || availablePostcards.length === 0}
             >
               {generatingPdf && pdfAction === 'print' ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

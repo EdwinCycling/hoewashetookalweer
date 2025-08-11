@@ -27,6 +27,8 @@ export interface UserStatusLists {
 export interface UsageAnalytics {
   tabClickCounts: Record<string, number>;
   monthlyUsage: Record<string, number>;
+  newspaperGenerationsThisMonth: number;
+  weeklyTabClicks: Record<string, number>; // Week keys like "2024-W01"
 }
 
 /**
@@ -144,9 +146,18 @@ export async function getUsageAnalytics(): Promise<UsageAnalytics> {
     tabClickCounts = tabClicksDoc.data() || {};
   }
 
+  // Get weekly tab click data for the last 26 weeks
+  let weeklyTabClicks: Record<string, number> = {};
+  const weeklyClicksDoc = await adminDb.collection('analytics').doc('weekly_tab_clicks').get();
+  if (weeklyClicksDoc.exists) {
+    weeklyTabClicks = weeklyClicksDoc.data() || {};
+  }
+
   return {
     newspaperGenerationsThisMonth,
     tabClickCounts,
+    monthlyUsage: {}, // Initialize empty for now
+    weeklyTabClicks,
   };
 }
 
@@ -162,10 +173,19 @@ export async function trackTabClick(tabId: string): Promise<void> {
   }
 
   try {
+    // Track total tab clicks
     const analyticsRef = adminDb.collection('analytics').doc('tab_clicks');
-    // Atomically increment the counter for the specific tab.
     await analyticsRef.set({
       [tabId]: FieldValue.increment(1)
+    }, { merge: true });
+
+    // Track weekly tab clicks
+    const now = new Date();
+    const weekKey = format(now, 'yyyy-\'W\'II', { weekStartsOn: 1 }); // ISO week format
+    
+    const weeklyAnalyticsRef = adminDb.collection('analytics').doc('weekly_tab_clicks');
+    await weeklyAnalyticsRef.set({
+      [weekKey]: FieldValue.increment(1)
     }, { merge: true });
   } catch (error) {
     console.error(`[Analytics] Failed to track click for tab "${tabId}":`, error);

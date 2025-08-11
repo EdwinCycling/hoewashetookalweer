@@ -189,7 +189,7 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(postcards)
+      body: JSON.stringify({ postcards })
     };
 
   } catch (error) {
@@ -197,7 +197,7 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: 'Er is een fout opgetreden bij het laden van de postcards' })
+      body: JSON.stringify({ error: 'Er is een fout opgetreden bij het laden van de postcards', postcards: [] })
     };
   }
 };

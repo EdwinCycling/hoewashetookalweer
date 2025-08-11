@@ -108,7 +108,7 @@ const premiumTiers: PremiumTier[] = [
     icon: Calendar,
     title: "Jaarpas",
     price: "€3",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR || "price_jaarpas_placeholder",
     duration: "1 Jaar Premium Toegang",
     description: "Perfect om een heel jaar lang ongestoord door de geschiedenis te reizen. Eenmalige betaling.",
     bgColor: "bg-green-50",
@@ -120,7 +120,7 @@ const premiumTiers: PremiumTier[] = [
     icon: CalendarClock,
     title: "Tweejaarpas",
     price: "€5",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR || "price_tweejaarpas_placeholder",
     duration: "2 Jaar Premium Toegang",
     description: "Dubbel zo lang genieten van alle premium voordelen, voor de echte geschiedenisliefhebber. Profiteer van 17% korting! Eenmalige betaling.",
     bgColor: "bg-blue-50",
@@ -132,7 +132,7 @@ const premiumTiers: PremiumTier[] = [
     icon: InfinityIcon,
     title: "Eeuwige Toegang",
     price: "€10",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG || "price_eeuwig_placeholder",
     duration: "10 Jaar Premium",
     description: "De ultieme ervaring! 10 jaar onbeperkt toegang tot alle huidige en toekomstige premium features. Eenmalige betaling, tijdelijke aanbieding!",
     bgColor: "bg-purple-50",
@@ -152,6 +152,12 @@ export default function PremiumPage() {
   const [selectedTier, setSelectedTier] = useState<PremiumTier | null>(null);
   const [emailForCheckout, setEmailForCheckout] = useState('');
 
+  // Check if Stripe is properly configured
+  const isStripeConfigured = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && 
+    process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR && 
+    process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR && 
+    process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG;
+
   useEffect(() => {
     if (app) {
       const auth = getAuth(app);
@@ -161,14 +167,26 @@ export default function PremiumPage() {
   }, []);
 
   const handleCheckout = async (priceId: string | undefined, email: string | null | undefined) => {
-    if (!priceId) {
+    // Check if Stripe is properly configured
+    if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
       toast({
-        title: "Configuratiefout",
-        description: "De prijs voor dit product is niet geconfigureerd. Neem contact op met de beheerder.",
+        title: "Stripe Niet Geconfigureerd",
+        description: "De betalingsverwerker is niet geconfigureerd. Neem contact op met de beheerder.",
         variant: "destructive",
       });
       return;
     }
+
+    // Check if price ID is valid (not a placeholder)
+    if (!priceId || priceId.includes('placeholder')) {
+      toast({
+        title: "Prijs Niet Geconfigureerd",
+        description: "De prijs voor dit product is niet correct geconfigureerd. Neem contact op met de beheerder.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoadingPriceId(priceId);
     
     const result = await createCheckoutSession(priceId, email);
@@ -219,6 +237,23 @@ export default function PremiumPage() {
               Ontgrendel de volledige ervaring en duik dieper in het verleden!
             </p>
           </div>
+
+          {/* Stripe Configuration Warning */}
+          {!isStripeConfigured && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-800">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                <div className="text-left">
+                  <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
+                    Betalingen Nog Niet Beschikbaar
+                  </h3>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    Stripe is nog niet geconfigureerd. Neem contact op met de beheerder om betalingen in te schakelen.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid md:grid-cols-2 gap-6 mb-10">
             <Card className="bg-card shadow-lg rounded-lg flex flex-col">
@@ -300,20 +335,52 @@ export default function PremiumPage() {
                         variant="default"
                         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                         onClick={() => handleChoosePlanClick(tier)}
-                        disabled={loadingPriceId === tier.priceId}
+                        disabled={loadingPriceId === tier.priceId || !isStripeConfigured}
                       >
                         {loadingPriceId === tier.priceId ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : !isStripeConfigured ? (
+                          <AlertCircle className="mr-2 h-4 w-4" />
                         ) : (
                           <Rocket className="mr-2 h-4 w-4" />
                         )}
-                        {tier.buttonText}
+                        {!isStripeConfigured ? "Niet Beschikbaar" : tier.buttonText}
                       </Button>
                   </CardFooter>
                 </Card>
               ))}
             </div>
           </div>
+
+          {/* Admin Configuration Instructions */}
+          {!isStripeConfigured && (
+            <Card className="w-full bg-blue-50 border-2 border-blue-200 shadow-lg rounded-lg mb-8 dark:bg-blue-900/20 dark:border-blue-800">
+              <CardHeader>
+                <CardTitle className="text-blue-800 dark:text-blue-200 flex items-center">
+                  <KeyRound className="h-5 w-5 mr-2" />
+                  Beheerder Instructies
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-blue-700 dark:text-blue-300 space-y-3">
+                <p className="text-sm">
+                  Om betalingen in te schakelen, moet u de volgende stappen uitvoeren:
+                </p>
+                <ol className="list-decimal list-inside space-y-1 text-sm pl-4">
+                  <li>Maak een Stripe account aan op <a href="https://stripe.com" target="_blank" rel="noopener noreferrer" className="underline">stripe.com</a></li>
+                  <li>Maak drie producten aan met de volgende prijzen: €3 (1 jaar), €5 (2 jaar), €10 (10 jaar)</li>
+                  <li>Kopieer de Price IDs van elk product</li>
+                  <li>Voeg de volgende variabelen toe aan uw <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">.env.local</code> bestand:</li>
+                </ol>
+                <div className="bg-blue-100 dark:bg-blue-800 p-3 rounded text-xs font-mono">
+                  <div>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...</div>
+                  <div>NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR=price_...</div>
+                  <div>NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR=price_...</div>
+                  <div>NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG=price_...</div>
+                  <div>STRIPE_SECRET_KEY=sk_test_...</div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="w-full bg-card shadow-lg rounded-lg mb-8">
             <CardHeader>

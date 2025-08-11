@@ -7,6 +7,7 @@ import { auth } from '@/lib/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { getUserPremiumStatus } from '@/actions/auth';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isPremium, setIsPremium] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -27,23 +29,66 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           // Check if user has admin privileges by email
           const adminEmails = [
             'admin@example.com', // Test account
-            // Add your actual admin email addresses here
-            edwin@editsolutions.nl,
+            // Add your actual admin email addresses 
+            'edwin@editsolutions.nl',
           ];
           
           const isUserAdmin = adminEmails.includes(user.email?.toLowerCase() || '');
           setIsAdmin(isUserAdmin);
           
-          if (!isUserAdmin) {
+          if (isUserAdmin) {
+            // Admin users should always be premium - check and ensure premium status
+            try {
+              const premiumStatus = await getUserPremiumStatus(user.uid);
+              setIsPremium(premiumStatus.isPremium);
+              
+              // If admin is not premium, we need to make them premium
+              if (!premiumStatus.isPremium) {
+                console.log(`Admin user ${user.email} is not premium, ensuring premium access...`);
+                
+                try {
+                  // Call API to grant premium access to admin user
+                  const response = await fetch('/api/grant-admin-premium', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ uid: user.uid }),
+                  });
+                  
+                  if (response.ok) {
+                    const result = await response.json();
+                    console.log('Premium access granted:', result);
+                    setIsPremium(true);
+                  } else {
+                    console.error('Failed to grant premium access:', response.statusText);
+                    // Admin users should always be premium, so set to true even if API call fails
+                    setIsPremium(true);
+                  }
+                } catch (apiError) {
+                  console.error('Error calling premium grant API:', apiError);
+                  // Admin users should always be premium, so set to true even if API call fails
+                  setIsPremium(true);
+                }
+              }
+            } catch (error) {
+              console.error('Error checking premium status for admin:', error);
+              // Admin users should always be premium, so set to true even if check fails
+              setIsPremium(true);
+            }
+          } else {
             console.log(`User ${user.email} is not an admin`);
+            setIsPremium(false);
           }
         } catch (error) {
           console.error('Error checking admin status:', error);
           setIsAdmin(false);
+          setIsPremium(false);
         }
       } else {
         setUser(null);
         setIsAdmin(false);
+        setIsPremium(false);
       }
       setLoading(false);
     });
@@ -52,11 +97,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }, []);
 
   useEffect(() => {
-    if (!loading && !isAdmin) {
-      // Redirect non-admin users to home page
+    if (!loading && (!isAdmin || !isPremium)) {
+      // Redirect non-admin or non-premium users to home page
       router.push('/');
     }
-  }, [loading, isAdmin, router]);
+  }, [loading, isAdmin, isPremium, router]);
 
   if (loading) {
     return (
@@ -78,7 +123,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!user || !isAdmin || !isPremium) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Card className="w-96">
@@ -91,7 +136,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <AlertTitle>Geen Toegang</AlertTitle>
               <AlertDescription>
                 Je hebt geen bevoegdheid om deze pagina te bekijken. 
-                Alleen admin gebruikers hebben toegang tot het admin dashboard.
+                Alleen admin gebruikers met premium toegang hebben toegang tot het admin dashboard.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -107,7 +152,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <div className="flex items-center space-x-4">
             <h1 className="text-lg font-semibold">Admin Dashboard</h1>
             <span className="text-sm text-muted-foreground">
-              Welkom, {user.email}
+              Welkom, {user.email} (Admin + Premium)
             </span>
           </div>
         </div>

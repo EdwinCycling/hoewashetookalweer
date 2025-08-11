@@ -17,7 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { getUserStatusLists, getUsageAnalytics, type PremiumUserStatus, type UsageAnalytics } from "@/actions/admin";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, UserPlus, Users, Newspaper, MousePointerClick } from "lucide-react";
+import { AlertCircle, UserPlus, Users, Newspaper, MousePointerClick, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ActivatedUsersCard } from './activated-users-card';
@@ -63,7 +63,7 @@ export default async function AdminUserStatusPage() {
       {/* Analytics Row */}
       <div className="w-full max-w-6xl mb-8">
         <h2 className="text-2xl font-semibold mb-4">Gebruiksstatistieken</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center">
@@ -95,6 +95,48 @@ export default async function AdminUserStatusPage() {
                             )}
                         </TableBody>
                     </Table>
+                </CardContent>
+            </Card>
+
+            {/* 26 Weeks Chart */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center">
+                        <BarChart3 className="mr-2 h-5 w-5 text-primary" />
+                        Tab Kliks (26 Weken)
+                    </CardTitle>
+                    <CardDescription>Totaal aantal tab kliks per week over de afgelopen 26 weken.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {analytics?.weeklyTabClicks && Object.keys(analytics.weeklyTabClicks).length > 0 ? (
+                        <div className="space-y-2">
+                            {Object.entries(analytics.weeklyTabClicks)
+                                .sort(([a], [b]) => a.localeCompare(b))
+                                .slice(-26)
+                                .map(([weekKey, count]) => (
+                                    <div key={weekKey} className="flex items-center justify-between">
+                                        <span className="text-sm font-medium">{weekKey}</span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-32 bg-muted rounded-full h-2">
+                                                <div 
+                                                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                                                    style={{ 
+                                                        width: `${Math.min(100, (count / Math.max(...Object.values(analytics.weeklyTabClicks))) * 100)}%` 
+                                                    }}
+                                                ></div>
+                                            </div>
+                                            <span className="text-sm font-mono min-w-[3rem] text-right">{count}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                        </div>
+                    ) : (
+                        <div className="text-center text-muted-foreground py-8">
+                            <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p>Nog geen wekelijkse klikdata beschikbaar.</p>
+                            <p className="text-xs">Data wordt verzameld zodra gebruikers tabbladen bezoeken.</p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>
