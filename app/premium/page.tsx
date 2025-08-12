@@ -5,14 +5,14 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Gem, ShieldOff, Clock, CalendarDays, ListChecks, AlertCircle, Calendar, CalendarClock, InfinityIcon, Rocket, KeyRound, Loader2, DatabaseZap, CheckCircle } from 'lucide-react';
+import { Gem, ShieldOff, Clock, CalendarDays, ListChecks, AlertCircle, Calendar, CalendarClock, InfinityIcon, Rocket, CheckCircle, Loader2, DatabaseZap } from 'lucide-react';
 import Link from "next/link";
 import { getAuth, type User } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { createCheckoutSession } from '@/actions/stripe';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 const premiumFeatures = [
   {
@@ -103,12 +103,19 @@ interface PremiumTier {
   buttonText: string;
 }
 
+// Fallback price IDs if environment variables are not loaded
+const FALLBACK_PRICE_IDS = {
+  JAAR: "price_1RVUZXESsR0kFO8LhY1BPlO6",
+  TWEEJAAR: "price_1RVUa5ESsR0kFO8LexRnzqpy", 
+  EEUWIG: "price_1RVUatESsR0kFO8LUdDCJ5vK"
+};
+
 const premiumTiers: PremiumTier[] = [
   {
     icon: Calendar,
     title: "Jaarpas",
     price: "€3",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR || "price_jaarpas_placeholder",
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR || FALLBACK_PRICE_IDS.JAAR,
     duration: "1 Jaar Premium Toegang",
     description: "Perfect om een heel jaar lang ongestoord door de geschiedenis te reizen. Eenmalige betaling.",
     bgColor: "bg-green-50",
@@ -120,7 +127,7 @@ const premiumTiers: PremiumTier[] = [
     icon: CalendarClock,
     title: "Tweejaarpas",
     price: "€5",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR || "price_tweejaarpas_placeholder",
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR || FALLBACK_PRICE_IDS.TWEEJAAR,
     duration: "2 Jaar Premium Toegang",
     description: "Dubbel zo lang genieten van alle premium voordelen, voor de echte geschiedenisliefhebber. Profiteer van 17% korting! Eenmalige betaling.",
     bgColor: "bg-blue-50",
@@ -132,7 +139,7 @@ const premiumTiers: PremiumTier[] = [
     icon: InfinityIcon,
     title: "Eeuwige Toegang",
     price: "€10",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG || "price_eeuwig_placeholder",
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG || FALLBACK_PRICE_IDS.EEUWIG,
     duration: "10 Jaar Premium",
     description: "De ultieme ervaring! 10 jaar onbeperkt toegang tot alle huidige en toekomstige premium features. Eenmalige betaling, tijdelijke aanbieding!",
     bgColor: "bg-purple-50",
@@ -141,7 +148,6 @@ const premiumTiers: PremiumTier[] = [
     buttonText: "Kies Eeuwige Toegang",
   },
 ];
-
 
 export default function PremiumPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -152,12 +158,6 @@ export default function PremiumPage() {
   const [selectedTier, setSelectedTier] = useState<PremiumTier | null>(null);
   const [emailForCheckout, setEmailForCheckout] = useState('');
 
-  // Check if Stripe is properly configured
-  const isStripeConfigured = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && 
-    process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR && 
-    process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR && 
-    process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG;
-
   useEffect(() => {
     if (app) {
       const auth = getAuth(app);
@@ -167,21 +167,11 @@ export default function PremiumPage() {
   }, []);
 
   const handleCheckout = async (priceId: string | undefined, email: string | null | undefined) => {
-    // Check if Stripe is properly configured
-    if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+    // Check if price ID is configured
+    if (!priceId) {
       toast({
         title: "Stripe Niet Geconfigureerd",
-        description: "De betalingsverwerker is niet geconfigureerd. Neem contact op met de beheerder.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if price ID is valid (not a placeholder)
-    if (!priceId || priceId.includes('placeholder')) {
-      toast({
-        title: "Prijs Niet Geconfigureerd",
-        description: "De prijs voor dit product is niet correct geconfigureerd. Neem contact op met de beheerder.",
+        description: "De betalingsverwerker is niet volledig geconfigureerd. Controleer of alle Stripe price IDs zijn ingesteld in de omgevingsvariabelen.",
         variant: "destructive",
       });
       return;
@@ -238,23 +228,39 @@ export default function PremiumPage() {
             </p>
           </div>
 
-          {/* Stripe Configuration Warning */}
-          {!isStripeConfigured && (
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-800">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                <div className="text-left">
-                  <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
-                    Betalingen Nog Niet Beschikbaar
-                  </h3>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                    Stripe is nog niet geconfigureerd. Neem contact op met de beheerder om betalingen in te schakelen.
-                  </p>
+          {/* Stripe Configuration Status */}
+          {(!process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR || 
+            !process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR || 
+            !process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG) && (
+            <Card className="w-full bg-yellow-50 border-yellow-200 shadow-lg rounded-lg mb-6">
+              <CardHeader>
+                <CardTitle className="text-yellow-800 flex items-center">
+                  <AlertCircle className="h-6 w-6 mr-2" />
+                  Omgevingsvariabelen Niet Geladen - Fallback Actief
+                </CardTitle>
+                <CardDescription className="text-yellow-700">
+                  De Stripe omgevingsvariabelen zijn niet geladen, maar fallback waarden zijn actief. De betalingen zouden moeten werken.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-yellow-700 space-y-2 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <div className={`p-2 rounded ${process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                    {process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR ? '✓ Jaarpas (ENV)' : '⚠ Jaarpas (Fallback)'}
+                  </div>
+                  <div className={`p-2 rounded ${process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                    {process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR ? '✓ Tweejaarpas (ENV)' : '⚠ Tweejaarpas (Fallback)'}
+                  </div>
+                  <div className={`p-2 rounded ${process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                    {process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG ? '✓ Eeuwige Toegang (ENV)' : '⚠ Eeuwige Toegang (Fallback)'}
+                  </div>
                 </div>
-              </div>
-            </div>
+                <p className="mt-2 text-xs">
+                  Fallback waarden worden gebruikt omdat de omgevingsvariabelen niet geladen zijn. Dit is normaal voor lokale ontwikkeling.
+                </p>
+              </CardContent>
+            </Card>
           )}
-
+          
           <div className="grid md:grid-cols-2 gap-6 mb-10">
             <Card className="bg-card shadow-lg rounded-lg flex flex-col">
               <CardHeader>
@@ -335,16 +341,14 @@ export default function PremiumPage() {
                         variant="default"
                         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                         onClick={() => handleChoosePlanClick(tier)}
-                        disabled={loadingPriceId === tier.priceId || !isStripeConfigured}
+                        disabled={loadingPriceId === tier.priceId}
                       >
                         {loadingPriceId === tier.priceId ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : !isStripeConfigured ? (
-                          <AlertCircle className="mr-2 h-4 w-4" />
                         ) : (
                           <Rocket className="mr-2 h-4 w-4" />
                         )}
-                        {!isStripeConfigured ? "Niet Beschikbaar" : tier.buttonText}
+                        {loadingPriceId === tier.priceId ? "Bezig..." : tier.buttonText}
                       </Button>
                   </CardFooter>
                 </Card>
@@ -352,47 +356,17 @@ export default function PremiumPage() {
             </div>
           </div>
 
-          {/* Admin Configuration Instructions */}
-          {!isStripeConfigured && (
-            <Card className="w-full bg-blue-50 border-2 border-blue-200 shadow-lg rounded-lg mb-8 dark:bg-blue-900/20 dark:border-blue-800">
-              <CardHeader>
-                <CardTitle className="text-blue-800 dark:text-blue-200 flex items-center">
-                  <KeyRound className="h-5 w-5 mr-2" />
-                  Beheerder Instructies
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-blue-700 dark:text-blue-300 space-y-3">
-                <p className="text-sm">
-                  Om betalingen in te schakelen, moet u de volgende stappen uitvoeren:
-                </p>
-                <ol className="list-decimal list-inside space-y-1 text-sm pl-4">
-                  <li>Maak een Stripe account aan op <a href="https://stripe.com" target="_blank" rel="noopener noreferrer" className="underline">stripe.com</a></li>
-                  <li>Maak drie producten aan met de volgende prijzen: €3 (1 jaar), €5 (2 jaar), €10 (10 jaar)</li>
-                  <li>Kopieer de Price IDs van elk product</li>
-                  <li>Voeg de volgende variabelen toe aan uw <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">.env.local</code> bestand:</li>
-                </ol>
-                <div className="bg-blue-100 dark:bg-blue-800 p-3 rounded text-xs font-mono">
-                  <div>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...</div>
-                  <div>NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR=price_...</div>
-                  <div>NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR=price_...</div>
-                  <div>NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG=price_...</div>
-                  <div>STRIPE_SECRET_KEY=sk_test_...</div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           <Card className="w-full bg-card shadow-lg rounded-lg mb-8">
             <CardHeader>
-              <CardTitle className="text-card-foreground">Heeft u al betaald?</CardTitle>
+              <CardTitle className="text-card-foreground">Premium Toegang</CardTitle>
             </CardHeader>
             <CardContent className="text-card-foreground space-y-4">
               <p>
-                  Na uw aankoop is uw premium status gekoppeld aan uw e-mailadres. U kunt uw premium account activeren door
-                  een account aan te maken met hetzelfde e-mailadres op de{' '}
-                  <Link href="/signup" className="text-primary underline hover:text-primary/80">registratiepagina</Link>.
+                Na uw aankoop is uw premium status gekoppeld aan uw e-mailadres. U kunt uw premium account activeren door
+                een account aan te maken met hetzelfde e-mailadres op de{' '}
+                <Link href="/signup" className="text-primary underline hover:text-primary/80">registratiepagina</Link>.
               </p>
-               <p>
+              <p>
                 Heeft u al een account? Log dan simpelweg in. Uw premium status wordt automatisch herkend.
               </p>
             </CardContent>
