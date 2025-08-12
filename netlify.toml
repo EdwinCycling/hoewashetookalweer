@@ -12,13 +12,24 @@
 [build.processing]
   skip_processing = false
 
-# Next.js App Router redirects
+# Next.js App Router redirects and rewrites
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
 
+# Handle Next.js app router pages
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Environment variables for production
+[context.production.environment]
+  NODE_ENV = "production"
+
+[context.deploy-preview.environment]
+  NODE_ENV = "preview"
+
+[context.branch-deploy.environment]
+  NODE_ENV = "development"

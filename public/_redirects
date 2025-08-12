@@ -1,8 +1,20 @@
-# Handle client-side routing
+# Handle client-side routing for Next.js App Router
 /*    /index.html   200
 
 # Handle Next.js static files
 /_next/*  /_next/:splat  200
 
-# Handle API routes
-/api/*  /.netlify/functions/___netlify-handler  200
+# Handle API routes - redirect to Netlify functions
+/api/*  /.netlify/functions/:splat  200
+
+# Handle specific podcast generator route
+/podcast-generator  /index.html  200
+
+# Handle admin routes
+/admin/*  /index.html  200
+
+# Handle other dynamic routes
+/checkout  /index.html  200
+/premium  /index.html  200
+/login  /index.html  200
+/signup  /index.html  200
