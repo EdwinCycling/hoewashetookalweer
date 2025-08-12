@@ -76,7 +76,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 
 import {
-    AlertCircle, BarChart3, CalendarDays, CalendarIcon, Loader2, Info, Users, Skull, Film as FilmIconLucide, BookOpen, Star, Home as HomeIcon, Fuel, Disc3, Mail,
+    AlertCircle, BarChart3, Calendar, CalendarDays, CalendarIcon, Loader2, Info, Users, Skull, Film as FilmIconLucide, BookOpen, Star, Home as HomeIcon, Fuel, Disc3, Mail,
     Thermometer, Wind as WindIcon, Sun as SunIcon, Droplets as DropletsIcon, Gauge as GaugeIcon, CloudFog, Umbrella as UmbrellaIcon, ExternalLink,
     Newspaper, Trophy, Euro, UsersRound, Music as MusicIcon, Baby, Gift, Tv2, Gamepad2, Smartphone, Landmark, Flame, Mic, Flag, Car, Activity,
     Music2 as SongFestivalIcon, Radio as TelevizierRingIcon, Award as OlympicIcon, CloudSunRain, Goal, DollarSign, Medal, Snowflake, MountainSnow as VolcanoIcon,

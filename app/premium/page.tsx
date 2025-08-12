@@ -103,19 +103,12 @@ interface PremiumTier {
   buttonText: string;
 }
 
-// Fallback price IDs if environment variables are not loaded
-const FALLBACK_PRICE_IDS = {
-  JAAR: "price_1RVUZXESsR0kFO8LhY1BPlO6",
-  TWEEJAAR: "price_1RVUa5ESsR0kFO8LexRnzqpy", 
-  EEUWIG: "price_1RVUatESsR0kFO8LUdDCJ5vK"
-};
-
 const premiumTiers: PremiumTier[] = [
   {
     icon: Calendar,
     title: "Jaarpas",
     price: "€3",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR || FALLBACK_PRICE_IDS.JAAR,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR || "price_jaarpas_placeholder", // Vervang door je echte Stripe price ID
     duration: "1 Jaar Premium Toegang",
     description: "Perfect om een heel jaar lang ongestoord door de geschiedenis te reizen. Eenmalige betaling.",
     bgColor: "bg-green-50",
@@ -127,7 +120,7 @@ const premiumTiers: PremiumTier[] = [
     icon: CalendarClock,
     title: "Tweejaarpas",
     price: "€5",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR || FALLBACK_PRICE_IDS.TWEEJAAR,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR || "price_tweejaarpas_placeholder", // Vervang door je echte Stripe price ID
     duration: "2 Jaar Premium Toegang",
     description: "Dubbel zo lang genieten van alle premium voordelen, voor de echte geschiedenisliefhebber. Profiteer van 17% korting! Eenmalige betaling.",
     bgColor: "bg-blue-50",
@@ -139,7 +132,7 @@ const premiumTiers: PremiumTier[] = [
     icon: InfinityIcon,
     title: "Eeuwige Toegang",
     price: "€10",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG || FALLBACK_PRICE_IDS.EEUWIG,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG || "price_eeuwig_placeholder", // Vervang door je echte Stripe price ID
     duration: "10 Jaar Premium",
     description: "De ultieme ervaring! 10 jaar onbeperkt toegang tot alle huidige en toekomstige premium features. Eenmalige betaling, tijdelijke aanbieding!",
     bgColor: "bg-purple-50",
@@ -148,6 +141,7 @@ const premiumTiers: PremiumTier[] = [
     buttonText: "Kies Eeuwige Toegang",
   },
 ];
+
 
 export default function PremiumPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -167,11 +161,11 @@ export default function PremiumPage() {
   }, []);
 
   const handleCheckout = async (priceId: string | undefined, email: string | null | undefined) => {
-    // Check if price ID is configured
-    if (!priceId) {
+    // Check if price ID is valid (not a placeholder)
+    if (!priceId || priceId.includes('placeholder')) {
       toast({
-        title: "Stripe Niet Geconfigureerd",
-        description: "De betalingsverwerker is niet volledig geconfigureerd. Controleer of alle Stripe price IDs zijn ingesteld in de omgevingsvariabelen.",
+        title: "Prijs Niet Geconfigureerd",
+        description: "De prijs voor dit product is niet correct geconfigureerd. Neem contact op met de beheerder.",
         variant: "destructive",
       });
       return;
@@ -228,38 +222,7 @@ export default function PremiumPage() {
             </p>
           </div>
 
-          {/* Stripe Configuration Status */}
-          {(!process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR || 
-            !process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR || 
-            !process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG) && (
-            <Card className="w-full bg-yellow-50 border-yellow-200 shadow-lg rounded-lg mb-6">
-              <CardHeader>
-                <CardTitle className="text-yellow-800 flex items-center">
-                  <AlertCircle className="h-6 w-6 mr-2" />
-                  Omgevingsvariabelen Niet Geladen - Fallback Actief
-                </CardTitle>
-                <CardDescription className="text-yellow-700">
-                  De Stripe omgevingsvariabelen zijn niet geladen, maar fallback waarden zijn actief. De betalingen zouden moeten werken.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-yellow-700 space-y-2 text-sm">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  <div className={`p-2 rounded ${process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                    {process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_JAAR ? '✓ Jaarpas (ENV)' : '⚠ Jaarpas (Fallback)'}
-                  </div>
-                  <div className={`p-2 rounded ${process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                    {process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_TWEEJAAR ? '✓ Tweejaarpas (ENV)' : '⚠ Tweejaarpas (Fallback)'}
-                  </div>
-                  <div className={`p-2 rounded ${process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                    {process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_EEUWIG ? '✓ Eeuwige Toegang (ENV)' : '⚠ Eeuwige Toegang (Fallback)'}
-                  </div>
-                </div>
-                <p className="mt-2 text-xs">
-                  Fallback waarden worden gebruikt omdat de omgevingsvariabelen niet geladen zijn. Dit is normaal voor lokale ontwikkeling.
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          {/* Stripe Configuration Warning - Removed since Stripe is now configured */}
           
           <div className="grid md:grid-cols-2 gap-6 mb-10">
             <Card className="bg-card shadow-lg rounded-lg flex flex-col">
@@ -355,6 +318,8 @@ export default function PremiumPage() {
               ))}
             </div>
           </div>
+
+          {/* Removed Admin Configuration Instructions section */}
 
           <Card className="w-full bg-card shadow-lg rounded-lg mb-8">
             <CardHeader>
